@@ -1,7 +1,6 @@
 // frontend/src/pages/OrderFlow.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { orderService } from '../services/api';
 import PackageSelection from '../components/OrderFlow/PackageSelection';
 import FlavorSelection from '../components/OrderFlow/FlavorSelection';
 import SweetnessSelection from '../components/OrderFlow/SweetnessSelection';
@@ -12,6 +11,7 @@ import OrderComplete from '../components/OrderFlow/OrderComplete';
 import ProgressIndicator from '../components/ui/ProgressIndicator';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorMessage from '../components/ui/ErrorMessage';
+import { orderService } from '../services/api';
 import '../styles/OrderFlow.css';
 
 // Types
@@ -230,7 +230,7 @@ const OrderFlow: React.FC = () => {
     return flavorIds.map(id => {
       const flavor = flavors.find(f => f.id === id);
       return flavor ? flavor.name : '';
-    });
+    }).filter(name => name !== '');
   };
   
   if (initialLoading) {
