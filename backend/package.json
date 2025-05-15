@@ -2,11 +2,11 @@
   "name": "coca-client-backend",
   "version": "1.0.0",
   "description": "Backend API for Coca Client",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node dist/index.js",
+    "dev": "npx ts-node-dev --respawn src/index.ts",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
@@ -29,7 +29,8 @@
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
     "eslint": "^8.54.0",
-    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.2"
   }
 }

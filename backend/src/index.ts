@@ -1,10 +1,11 @@
-// backend/index.js (archivo JavaScript en lugar de TypeScript)
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
-const orderRoutes = require('./src/routes/orderRoutes');
+// src/index.ts
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import orderRoutes from './routes/orderRoutes';
+import { errorHandler } from './middlewares/errorHandler';
 
 // Load environment variables
 dotenv.config();
@@ -40,28 +41,7 @@ app.use((req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
-  console.error('Error occurred:', err);
-  
-  // Default error values
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Error interno del servidor';
-  
-  // Handle specific errors
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({
-      success: false,
-      message: 'El archivo es demasiado grande. Tamaño máximo: 5MB',
-    });
-  }
-  
-  // Send error response
-  res.status(statusCode).json({
-    success: false,
-    message,
-    error: process.env.NODE_ENV === 'production' ? undefined : err.stack,
-  });
-});
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
@@ -69,4 +49,4 @@ app.listen(PORT, () => {
   console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
-module.exports = app;
+export default app;

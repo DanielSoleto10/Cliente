@@ -1,4 +1,4 @@
-// backend/src/middlewares/errorHandler.ts
+// src/middlewares/errorHandler.ts
 import { Request, Response, NextFunction } from 'express';
 
 // Error interface
@@ -9,19 +9,20 @@ export interface AppError extends Error {
 
 // Error handler middleware
 export const errorHandler = (
-  err: AppError,
+  err: Error,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   console.error('Error occurred:', err);
   
+  const appError = err as AppError;
   // Default error values
-  const statusCode = err.statusCode || 500;
+  const statusCode = appError.statusCode || 500;
   const message = err.message || 'Error interno del servidor';
   
   // Handle specific errors
-  if (err.code === 'LIMIT_FILE_SIZE') {
+  if (appError.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       success: false,
       message: 'El archivo es demasiado grande. Tamaño máximo: 5MB',
@@ -57,6 +58,3 @@ export const createError = (message: string, statusCode: number = 400): AppError
   error.statusCode = statusCode;
   return error;
 };
-
-// Export everything together
-export default { errorHandler, notFoundHandler, createError };

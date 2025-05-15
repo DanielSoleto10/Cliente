@@ -1,4 +1,4 @@
-// backend/src/config/supabase.ts
+// src/config/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
@@ -6,15 +6,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Get Supabase URL and Key from environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://tu-proyecto.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'tu-clave-aqui';
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    'Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined.'
-  );
-}
+// Log para depuración - quita esto en producción
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key exists:', !!supabaseKey);
 
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey, {
