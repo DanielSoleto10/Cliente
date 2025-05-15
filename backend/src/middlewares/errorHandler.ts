@@ -58,4 +58,5 @@ export const createError = (message: string, statusCode: number = 400): AppError
   return error;
 };
 
+// Export everything together
 export default { errorHandler, notFoundHandler, createError };
