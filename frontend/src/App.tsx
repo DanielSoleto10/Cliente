@@ -10,7 +10,6 @@ function App() {
       <div className="app-container">
         <header className="app-header">
           <img src="/assets/images/logo.png" alt="Coca Premium" className="app-logo" />
-          <h1 className="app-title">Coca Premium</h1>
         </header>
         
         <main className="main-content">

@@ -1,11 +1,18 @@
-// backend/src/routes/orderRoutes.ts
 import express from 'express';
 import multer from 'multer';
-import orderController from '../controllers/orderController';
+import { 
+  createOrder, 
+  getPackages, 
+  getCategories, 
+  getFlavors, 
+  getCrushedTypes, 
+  uploadPaymentProof, 
+  getDailySales 
+} from '../controllers/orderController';
 
 const router = express.Router();
 
-// Configure multer for memory storage (we'll upload directly to Supabase)
+// Configure multer for memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
@@ -13,7 +20,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB max file size
   },
   fileFilter: (req, file, cb) => {
-    // Accept only images
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -22,29 +28,14 @@ const upload = multer({
   }
 });
 
-// Route for getting all packages
-router.get('/packages', orderController.getPackages);
-
-// Route for getting all categories
-router.get('/categories', orderController.getCategories);
-
-// Route for getting all flavors
-router.get('/flavors', orderController.getFlavors);
-
-// Route for getting flavors by category
-router.get('/flavors/category/:categoryId', orderController.getFlavors);
-
-// Route for uploading payment proof
-router.post(
-  '/upload/payment-proof',
-  upload.single('paymentProof'),
-  orderController.uploadPaymentProof
-);
-
-// Route for creating an order
-router.post('/orders', orderController.createOrder);
-
-// Route for getting daily sales data (not needed for client view but useful for integration)
-router.get('/reports/daily-sales', orderController.getDailySales);
+// Routes
+router.get('/packages', getPackages);
+router.get('/categories', getCategories);
+router.get('/flavors', getFlavors);
+router.get('/crushed-types', getCrushedTypes);
+router.get('/flavors/category/:categoryId', getFlavors);
+router.post('/upload/payment-proof', upload.single('paymentProof'), uploadPaymentProof);
+router.post('/orders', createOrder);
+router.get('/reports/daily-sales', getDailySales);
 
 export default router;

@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base URL for the API - can be changed in .env file
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.5:5000/api';
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -54,6 +54,17 @@ export const orderService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching all flavors:', error);
+      throw error;
+    }
+  },
+
+  // NUEVA FUNCIÓN: Get crushed types
+  getCrushedTypes: async () => {
+    try {
+      const response = await api.get('/crushed-types');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching crushed types:', error);
       throw error;
     }
   },

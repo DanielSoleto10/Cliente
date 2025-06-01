@@ -26,7 +26,7 @@ const PackageSelection: React.FC<PackageSelectionProps> = ({
       <h2 className="step-title">Selecciona tu paquete</h2>
       
       <div className="package-image-container">
-        <img src="/assets/images/coca-bag.png" alt="Bolsa de coca" className="package-image" />
+        <img src="/frontend/public/images/bolsa.png" alt="Bolsa de coca" className="package-image" />
       </div>
       
       <div className="packages-list">

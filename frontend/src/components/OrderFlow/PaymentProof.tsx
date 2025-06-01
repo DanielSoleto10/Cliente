@@ -39,7 +39,7 @@ const PaymentProof: React.FC<PaymentProofProps> = ({
       
       <div className="qr-code-section">
         <img 
-          src="/assets/images/qr-code.png" 
+          src="/images/qr_code.png" 
           alt="Código QR para pago" 
           className="qr-code-image"
         />

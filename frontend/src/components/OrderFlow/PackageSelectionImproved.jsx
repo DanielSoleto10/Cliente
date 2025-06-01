@@ -9,7 +9,7 @@ function PackageSelection({ packages, selectedPackage, onSelect, onNext }) {
       <p className="subtitle">Elige el tamaño que mejor se adapte a tus necesidades</p>
 
       <div className="flex justify-center mb-6">
-        <img src="/assets/images/coca-bag.png" alt="Bolsa de coca" className="package-image" />
+        <img src="/frontend/public/images/bolsa.png" alt="Bolsa de coca" className="package-image" />
       </div>
 
       <div className="package-grid">

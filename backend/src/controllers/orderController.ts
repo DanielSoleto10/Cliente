@@ -1,303 +1,523 @@
-// backend/src/controllers/orderController.ts
-import { Request, Response } from 'express';
-import supabase from '../config/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+dotenv.config();
 
-/**
- * Get all available packages
- */
+import { Request, Response } from 'express';
+import { createClient } from '@supabase/supabase-js';
+
+// Configuración de Supabase
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+// Crear cliente Supabase
+let supabase: any = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('✅ Cliente Supabase inicializado correctamente');
+} else {
+  console.error('❌ Variables de Supabase no configuradas');
+}
+
+// MÉTODO: createOrder CON PRECIO CORRECTO
+export const createOrder = async (req: Request, res: Response) => {
+  try {
+    console.log('📝 ==============================');
+    console.log('📝 INICIANDO CREACIÓN DE PEDIDO');
+    console.log('📝 ==============================');
+
+    console.log('📋 Datos recibidos del frontend:');
+    console.log(JSON.stringify(req.body, null, 2));
+
+    const {
+      customerName,
+      packageInfo,
+      flavorIds,
+      sweetness,
+      crushedType,
+      paymentProofUrl
+    } = req.body;
+
+    console.log('🔍 Validando campos requeridos...');
+    console.log('  - customerName:', customerName ? '✅' : '❌', customerName);
+    console.log('  - packageInfo:', packageInfo ? '✅' : '❌', packageInfo);
+    console.log('  - flavorIds:', flavorIds ? '✅' : '❌', flavorIds);
+    console.log('  - sweetness:', sweetness ? '✅' : '❌', sweetness);
+    console.log('  - crushedType:', crushedType ? '✅' : '❌', crushedType);
+    console.log('  - paymentProofUrl:', paymentProofUrl ? '✅' : '❌', paymentProofUrl);
+
+    // Validar datos requeridos
+    if (!customerName || !packageInfo || !flavorIds || !sweetness || !crushedType || !paymentProofUrl) {
+      console.log('❌ Faltan campos requeridos');
+      return res.status(400).json({
+        success: false,
+        error: 'Faltan campos requeridos',
+        missing: {
+          customerName: !customerName,
+          packageInfo: !packageInfo,
+          flavorIds: !flavorIds,
+          sweetness: !sweetness,
+          crushedType: !crushedType,
+          paymentProofUrl: !paymentProofUrl
+        }
+      });
+    }
+
+    // ✨ NUEVO: Extraer el precio del packageInfo
+    let extractedPrice = 1; // valor por defecto
+
+    try {
+      console.log('💰 Extrayendo precio del packageInfo:', packageInfo);
+
+      // Buscar el patrón "- XX Bs -" en el packageInfo
+      // Ejemplo: "Paquete Black - 30 Bs - 150 g"
+      const priceMatch = packageInfo.match(/- (\d+(?:\.\d+)?) Bs -/);
+
+      if (priceMatch && priceMatch[1]) {
+        extractedPrice = parseFloat(priceMatch[1]);
+        console.log('💰 ✅ Precio extraído exitosamente:', extractedPrice, 'Bs');
+      } else {
+        console.log('⚠️ No se pudo extraer el precio con el patrón esperado');
+        console.log('⚠️ Usando valor por defecto:', extractedPrice, 'Bs');
+
+        // Intentar patrón alternativo sin guiones
+        const altPriceMatch = packageInfo.match(/(\d+(?:\.\d+)?) Bs/);
+        if (altPriceMatch && altPriceMatch[1]) {
+          extractedPrice = parseFloat(altPriceMatch[1]);
+          console.log('💰 ✅ Precio extraído con patrón alternativo:', extractedPrice, 'Bs');
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Error extrayendo precio:', error);
+      console.log('⚠️ Usando valor por defecto:', extractedPrice, 'Bs');
+    }
+
+    // Preparar datos para la base de datos
+    const orderData = {
+      flavors: flavorIds,
+      sweetness: sweetness,  // ← AGREGAR ESTA LÍNEA
+      crushed_type: crushedType,
+      package_type: packageInfo,
+      amount: extractedPrice,
+      notes: null,  // ← CAMBIAR: quitar la dulzura
+      status: 'pending',
+      full_name: customerName,
+      payment_proof_url: paymentProofUrl,
+      created_at: new Date().toISOString()
+    };
+
+    console.log('💾 Datos preparados para guardar:');
+    console.log(JSON.stringify(orderData, null, 2));
+    console.log('💰 Amount final que se guardará:', extractedPrice, 'Bs');
+
+    // Verificar si Supabase está disponible
+    if (!supabase) {
+      console.warn('⚠️ Supabase no disponible, no se puede guardar el pedido');
+      return res.status(500).json({
+        success: false,
+        error: 'Configuración de base de datos incompleta',
+        message: 'Variables de entorno de Supabase no configuradas correctamente'
+      });
+    }
+
+    console.log('🔗 Conectando a Supabase...');
+
+    // Test de conexión y estructura de tabla
+    try {
+      console.log('🔍 Verificando tabla "orders"...');
+
+      // Primero hacer un SELECT simple para verificar la conexión
+      const { data: testData, error: testError } = await supabase
+        .from('orders')
+        .select('*')
+        .limit(1);
+
+      if (testError) {
+        console.error('❌ Error de conexión/tabla:', testError);
+        return res.status(500).json({
+          success: false,
+          error: 'Error de base de datos - tabla no accesible',
+          message: testError.message,
+          supabaseError: testError
+        });
+      }
+
+      console.log('✅ Conexión a tabla "orders" exitosa');
+
+    } catch (error) {
+      console.error('❌ Error de conexión general:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error de conexión con base de datos',
+        message: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+
+    console.log('📝 Insertando pedido en Supabase...');
+
+    // Insertar en la base de datos
+    const { data, error } = await supabase
+      .from('orders')
+      .insert(orderData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Error de Supabase INSERT:', error);
+      console.error('❌ Código de error:', error.code);
+      console.error('❌ Detalles:', error.details);
+      console.error('❌ Hint:', error.hint);
+      console.error('❌ Message:', error.message);
+
+      return res.status(500).json({
+        success: false,
+        error: 'Error al insertar en base de datos',
+        message: error.message,
+        supabaseError: {
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        }
+      });
+    }
+
+    console.log('✅ Pedido insertado exitosamente:');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('💰 Precio final guardado:', data.amount, 'Bs');
+
+    console.log('✅ ==============================');
+    console.log('✅ PEDIDO CREADO EXITOSAMENTE');
+    console.log('✅ ==============================');
+
+    res.json({
+      success: true,
+      data,
+      message: 'Pedido creado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('❌ ERROR GENERAL EN CREATE ORDER:', error);
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack');
+
+    res.status(500).json({
+      success: false,
+      error: 'Error al crear pedido',
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
+// Otras funciones del controlador
+export const getOrders = async (req: Request, res: Response) => {
+  try {
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuración de base de datos incompleta'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error al obtener órdenes:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al obtener órdenes',
+        message: error.message
+      });
+    }
+
+    res.json({
+      success: true,
+      data,
+      message: 'Órdenes obtenidas exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error en getOrders:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
+// Función para obtener paquetes - DESDE SUPABASE
 export const getPackages = async (req: Request, res: Response) => {
   try {
+    console.log('📦 Solicitando paquetes desde Supabase...');
+
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuración de base de datos incompleta'
+      });
+    }
+
     const { data, error } = await supabase
       .from('packages')
       .select('*')
-      .order('price', { ascending: true });
-    
+      .order('created_at', { ascending: true });
+
     if (error) {
-      console.error('Error fetching packages:', error);
+      console.error('Error al obtener paquetes:', error);
       return res.status(500).json({
         success: false,
-        message: 'Error al obtener los paquetes',
-        error: error.message
+        error: 'Error al obtener paquetes',
+        message: error.message
       });
     }
-    
-    return res.status(200).json({
+
+    res.json({
       success: true,
-      data: data || []
+      data: data
     });
-  } catch (error: any) {
-    console.error('Unexpected error fetching packages:', error);
-    return res.status(500).json({
+  } catch (error) {
+    console.error('Error en getPackages:', error);
+    res.status(500).json({
       success: false,
-      message: 'Error inesperado al obtener los paquetes',
-      error: error.message
+      error: 'Error interno del servidor'
     });
   }
 };
 
-/**
- * Get all flavor categories
- */
+// Función para obtener categorías - DESDE SUPABASE
 export const getCategories = async (req: Request, res: Response) => {
   try {
+    console.log('📂 Solicitando categorías desde Supabase...');
+
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuración de base de datos incompleta'
+      });
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .order('name', { ascending: true });
-    
+      .order('created_at', { ascending: true });
+
     if (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error al obtener categorías:', error);
       return res.status(500).json({
         success: false,
-        message: 'Error al obtener las categorías',
-        error: error.message
+        error: 'Error al obtener categorías',
+        message: error.message
       });
     }
-    
-    return res.status(200).json({
+
+    res.json({
       success: true,
-      data: data || []
+      data: data
     });
-  } catch (error: any) {
-    console.error('Unexpected error fetching categories:', error);
-    return res.status(500).json({
+  } catch (error) {
+    console.error('Error en getCategories:', error);
+    res.status(500).json({
       success: false,
-      message: 'Error inesperado al obtener las categorías',
-      error: error.message
+      error: 'Error interno del servidor'
     });
   }
 };
 
-/**
- * Get all flavors or flavors by category
- */
+// Función para obtener sabores - DESDE SUPABASE
 export const getFlavors = async (req: Request, res: Response) => {
   try {
+    console.log('🍬 Solicitando sabores desde Supabase...');
     const { categoryId } = req.params;
-    
-    let query = supabase.from('flavors').select('*');
-    
-    if (categoryId && categoryId !== 'all') {
-      query = query.eq('category_id', categoryId);
-    }
-    
-    const { data, error } = await query.order('name', { ascending: true });
-    
-    if (error) {
-      console.error('Error fetching flavors:', error);
+
+    if (!supabase) {
       return res.status(500).json({
         success: false,
-        message: 'Error al obtener los sabores',
-        error: error.message
+        error: 'Configuración de base de datos incompleta'
       });
     }
-    
-    return res.status(200).json({
+
+    let query = supabase
+      .from('flavors')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    // Filtrar por categoría si se proporciona
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error al obtener sabores:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al obtener sabores',
+        message: error.message
+      });
+    }
+
+    res.json({
       success: true,
-      data: data || []
+      data: data
     });
-  } catch (error: any) {
-    console.error('Unexpected error fetching flavors:', error);
-    return res.status(500).json({
+  } catch (error) {
+    console.error('Error en getFlavors:', error);
+    res.status(500).json({
       success: false,
-      message: 'Error inesperado al obtener los sabores',
-      error: error.message
+      error: 'Error interno del servidor'
     });
   }
 };
 
-/**
- * Upload payment proof image to Supabase Storage
- */
+// Función para obtener tipos de machucado - DESDE SUPABASE
+export const getCrushedTypes = async (req: Request, res: Response) => {
+  try {
+    console.log('🔨 Solicitando tipos de machucado desde Supabase...');
+
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Configuración de base de datos incompleta'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('crushed_types')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error al obtener tipos de machucado:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al obtener tipos de machucado',
+        message: error.message
+      });
+    }
+
+    res.json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    console.error('Error en getCrushedTypes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+};
+
+// Función para subir comprobante de pago - SUPABASE STORAGE
 export const uploadPaymentProof = async (req: Request, res: Response) => {
   try {
+    console.log('📤 Recibiendo comprobante de pago...');
+    console.log('Archivo recibido:', req.file);
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No se ha subido ningún archivo'
+        error: 'No se recibió ningún archivo'
       });
     }
-    
-    const file = req.file;
-    const fileExtension = file.originalname.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    const filePath = `payment_proofs/${fileName}`;
-    
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('orders')
-      .upload(filePath, file.buffer, {
-        contentType: file.mimetype,
-        cacheControl: '3600'
-      });
-    
-    if (error) {
-      console.error('Error uploading file to Supabase:', error);
+
+    if (!supabase) {
       return res.status(500).json({
         success: false,
-        message: 'Error al subir el comprobante de pago',
-        error: error.message
+        error: 'Configuración de Supabase incompleta'
       });
     }
-    
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('orders')
-      .getPublicUrl(filePath);
-    
-    return res.status(200).json({
+
+    // Generar nombre único para el archivo
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+    console.log('📤 Subiendo archivo a Supabase Storage...');
+
+    // Subir archivo a Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('payment-proofs')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('❌ Error subiendo a Supabase Storage:', uploadError);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al subir archivo',
+        message: uploadError.message
+      });
+    }
+
+    // Obtener URL pública del archivo
+    const { data: urlData } = supabase.storage
+      .from('payment-proofs')
+      .getPublicUrl(fileName);
+
+    console.log('✅ Archivo subido exitosamente a Supabase Storage');
+    console.log('🔗 URL pública:', urlData.publicUrl);
+
+    res.json({
       success: true,
-      url: publicUrlData.publicUrl
+      message: 'Comprobante subido exitosamente',
+      url: urlData.publicUrl,
+      filename: fileName
     });
-  } catch (error: any) {
-    console.error('Unexpected error uploading payment proof:', error);
-    return res.status(500).json({
+
+  } catch (error) {
+    console.error('Error en uploadPaymentProof:', error);
+    res.status(500).json({
       success: false,
-      message: 'Error inesperado al subir el comprobante de pago',
-      error: error.message
+      error: 'Error interno del servidor'
     });
   }
 };
 
-/**
- * Create a new order
- */
-export const createOrder = async (req: Request, res: Response) => {
-  try {
-    const { 
-      customerName, 
-      packageInfo, 
-      flavorIds, 
-      sweetness, 
-      crushedType, 
-      paymentProofUrl 
-    } = req.body;
-    
-    // Validate required fields
-    if (!customerName || !packageInfo || !flavorIds || !sweetness || !crushedType || !paymentProofUrl) {
-      return res.status(400).json({
-        success: false,
-        message: 'Faltan campos requeridos'
-      });
-    }
-    
-    // Extract package price for total (e.g. from "10 Bs - 45 g" get "10")
-    let totalPrice = 0;
-    const priceMatch = packageInfo.match(/(\d+)/);
-    if (priceMatch && priceMatch[1]) {
-      totalPrice = parseInt(priceMatch[1], 10);
-    }
-    
-    // Generate order ID (format: CC-YYYYMMDD-XXXX)
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
-    const orderID = `CC-${dateStr}-${randomPart}`;
-    
-    // 1. Create order in orders table
-    const { data: orderData, error: orderError } = await supabase
-      .from('clientes') // Using 'clientes' table as per your existing schema
-      .insert({
-        id_pedido: orderID,
-        nombre_cliente: customerName,
-        paquete: packageInfo,
-        sabores: Array.isArray(flavorIds) ? flavorIds.join(',') : flavorIds,
-        grado_dulce: sweetness,
-        tipo_machucado: crushedType,
-        comprobante: paymentProofUrl,
-        fecha: now.toISOString().split('T')[0], // YYYY-MM-DD format
-      })
-      .select()
-      .single();
-    
-    if (orderError) {
-      console.error('Error creating order:', orderError);
-      return res.status(500).json({
-        success: false,
-        message: 'Error al crear el pedido',
-        error: orderError.message
-      });
-    }
-    
-    return res.status(201).json({
-      success: true,
-      message: 'Pedido creado exitosamente',
-      data: {
-        orderID,
-        ...orderData
-      }
-    });
-    
-  } catch (error: any) {
-    console.error('Unexpected error creating order:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error inesperado al crear el pedido',
-      error: error.message
-    });
-  }
-};
-
-/**
- * Get daily sales data for reports (not needed for client view but useful for integration)
- */
+// Función para obtener ventas diarias
 export const getDailySales = async (req: Request, res: Response) => {
   try {
-    const { date } = req.query;
-    
-    if (!date) {
-      return res.status(400).json({
-        success: false,
-        message: 'Se requiere una fecha (formato YYYY-MM-DD)'
-      });
-    }
-    
-    const { data, error } = await supabase
-      .from('clientes')
-      .select('*')
-      .eq('fecha', date);
-    
-    if (error) {
-      console.error('Error fetching daily sales:', error);
+    console.log('📊 Solicitando ventas diarias...');
+
+    if (!supabase) {
       return res.status(500).json({
         success: false,
-        message: 'Error al obtener las ventas diarias',
-        error: error.message
+        error: 'Configuración de base de datos incompleta'
       });
     }
-    
-    // Calculate total sales
-    const totalSales = data?.reduce((sum, item) => {
-      const price = parseInt(item.paquete.match(/(\d+)/)?.[1] || '0', 10);
-      return sum + price;
-    }, 0);
-    
-    return res.status(200).json({
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .gte('created_at', new Date().toISOString().split('T')[0]);
+
+    if (error) {
+      console.error('Error al obtener ventas diarias:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al obtener ventas diarias',
+        message: error.message
+      });
+    }
+
+    const totalSales = data.reduce((sum: number, order: any) => sum + (order.amount || 0), 0);
+
+    res.json({
       success: true,
       data: {
-        orders: data || [],
-        total: totalSales,
-        count: data?.length || 0,
-        date
+        orders: data,
+        totalOrders: data.length,
+        totalSales: totalSales
       }
     });
-    
-  } catch (error: any) {
-    console.error('Unexpected error fetching daily sales:', error);
-    return res.status(500).json({
+  } catch (error) {
+    console.error('Error en getDailySales:', error);
+    res.status(500).json({
       success: false,
-      message: 'Error inesperado al obtener las ventas diarias',
-      error: error.message
+      error: 'Error interno del servidor'
     });
   }
-};
-
-export default {
-  getPackages,
-  getCategories,
-  getFlavors,
-  uploadPaymentProof,
-  createOrder,
-  getDailySales
 };
