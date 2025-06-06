@@ -1,17 +1,7 @@
-// frontend/src/components/OrderFlow/FlavorSelection.tsx
-import React, { useState } from 'react';
+// components/OrderFlow/FlavorSelection.tsx
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
-
-interface Flavor {
-  id: string;
-  name: string;
-  category_id: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { Flavor, Category } from '../../services/orderService';
 
 interface FlavorSelectionProps {
   flavors: Flavor[];
@@ -21,6 +11,7 @@ interface FlavorSelectionProps {
   onRemoveFlavor: (flavorId: string) => void;
   onNext: () => void;
   onBack: () => void;
+  currentStep: number;
 }
 
 const FlavorSelection: React.FC<FlavorSelectionProps> = ({
@@ -30,31 +21,39 @@ const FlavorSelection: React.FC<FlavorSelectionProps> = ({
   onAddFlavor,
   onRemoveFlavor,
   onNext,
-  onBack
+  onBack,
+  currentStep
 }) => {
-  const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
-  
-  // Filter flavors by category
-  const filteredFlavors = activeCategory === 'all' 
-    ? flavors 
-    : flavors.filter(flavor => flavor.category_id === activeCategory);
-  
-  // Get flavor name by ID
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [filteredFlavors, setFilteredFlavors] = useState<Flavor[]>([]);
+
+  const stepTitles = ['', 'Selecciona tu paquete', 'Selecciona tus sabores', 'Grado de dulce', 'Tipo de machucado', 'Resumen del pedido', 'Finaliza tu pedido'];
+
+  // Filtrar sabores por categoría
+  useEffect(() => {
+    if (activeCategory === 'all') {
+      setFilteredFlavors(flavors);
+    } else {
+      setFilteredFlavors(flavors.filter(flavor => flavor.category_id === activeCategory));
+    }
+  }, [activeCategory, flavors]);
+
   const getFlavorName = (flavorId: string) => {
     const flavor = flavors.find(f => f.id === flavorId);
     return flavor ? flavor.name : '';
   };
 
   return (
-    <div className="flavor-selection">
-      <div className="step-header">
-        <button className="back-button" onClick={onBack}>
-          <ChevronLeft className="button-icon" />
+    <div className="card">
+      <div className="flex mb-4">
+        <button onClick={onBack} className="back-button-styled">
+          <ChevronLeft size={20} />
         </button>
-        <h2 className="step-title">Selecciona tus sabores</h2>
+        <h2 className="title" style={{ marginLeft: '8px' }}>{stepTitles[currentStep]}</h2>
       </div>
-      
-      {/* Category tabs */}
+      <div className="progress-text mb-4">Paso {currentStep} de 6</div>
+
+      {/* Tabs de categorías */}
       <div className="category-tabs">
         <button
           className={`category-tab ${activeCategory === 'all' ? 'active' : ''}`}
@@ -72,68 +71,66 @@ const FlavorSelection: React.FC<FlavorSelectionProps> = ({
           </button>
         ))}
       </div>
-      
-      {/* Flavor selection guide */}
-      <p className="selection-guide">Puedes elegir hasta 4 sabores</p>
-      
-      {/* Flavors grid */}
+
+      <p className="subtitle">Puedes elegir hasta 4 sabores</p>
+
       <div className="flavors-grid">
-        {filteredFlavors.map(flavor => (
-          <div 
+        {filteredFlavors.map((flavor) => (
+          <div
             key={flavor.id}
             className={`flavor-item ${selectedFlavors.includes(flavor.id) ? 'selected' : ''}`}
           >
             <span className="flavor-name">{flavor.name}</span>
-            
+
             {selectedFlavors.includes(flavor.id) ? (
-              <button 
-                className="remove-flavor-button"
+              <button
+                className="remove-button"
                 onClick={() => onRemoveFlavor(flavor.id)}
               >
-                <X className="button-icon small" />
+                <X size={16} />
               </button>
             ) : (
-              <button 
-                className="add-flavor-button"
+              <button
+                className="add-button"
                 onClick={() => onAddFlavor(flavor.id)}
                 disabled={selectedFlavors.length >= 4}
               >
-                <Plus className="button-icon small" />
+                <Plus size={16} />
               </button>
             )}
           </div>
         ))}
       </div>
-      
-      {/* Selected flavors */}
-      <div className="selected-flavors-section">
-        <h3 className="section-title">Sabores seleccionados:</h3>
-        
+
+      <div className="selected-flavors">
+        <h3 className="mb-2 font-medium">Sabores seleccionados:</h3>
+
         {selectedFlavors.length === 0 ? (
-          <p className="empty-selection">Ningún sabor seleccionado</p>
+          <p className="text-gray-500 italic">Ningún sabor seleccionado</p>
         ) : (
-          <div className="selected-flavors-list">
-            {selectedFlavors.map(flavorId => (
-              <div key={flavorId} className="selected-flavor-tag">
+          <div className="flex flex-wrap">
+            {selectedFlavors.map((flavorId) => (
+              <span key={flavorId} className="flavor-tag">
                 {getFlavorName(flavorId)}
-                <button 
-                  className="remove-tag-button"
+                <button
+                  className="tag-remove"
                   onClick={() => onRemoveFlavor(flavorId)}
                 >
-                  <X className="button-icon extra-small" />
+                  <X size={12} />
                 </button>
-              </div>
+              </span>
             ))}
           </div>
         )}
       </div>
-      
+
       <button
-        className="next-button"
+        className="button"
         disabled={selectedFlavors.length === 0}
         onClick={onNext}
       >
-        Siguiente <ChevronRight className="button-icon" />
+        Siguiente
+        <ChevronRight size={20} className="ml-1" />
       </button>
     </div>
   );

@@ -111,9 +111,15 @@ class OrderService {
   async createOrder(orderData: CreateOrderData): Promise<OrderResponse> {
     console.log('📝 Creando pedido...');
     console.log('📝 Datos del pedido:', orderData);
-    
+
     try {
       const response = await apiService.createOrder(orderData);
+
+      // 🔍 DEBUG: Ver qué devuelve exactamente el API
+      console.log('🔍 RESPUESTA COMPLETA DEL API:', response);
+      console.log('🔍 RESPUESTA.DATA:', response.data);
+      console.log('🔍 TODAS LAS PROPIEDADES:', Object.keys(response));
+
       return {
         success: true,
         data: response.data || response,

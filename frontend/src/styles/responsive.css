@@ -1,0 +1,25 @@
+/* responsive.css - Arreglar espaciado superior en móvil */
+
+/* Más espacio arriba del container principal */
+@media (max-width: 768px) {
+  .container {
+    padding-top: 12px !important; /* En lugar de 80px, dar más espacio */
+  }
+  
+  /* O alternativamente, más margin-top en las cards */
+  .card {
+    margin-top: 40px !important;
+  }
+  
+  /* Asegurar que el progress bar tenga más padding abajo */
+  .progress-bar {
+    padding-bottom: 20px !important;
+  }
+}
+
+/* Para tablet también dar un poco más de espacio */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding-top: 100px !important;
+  }
+}

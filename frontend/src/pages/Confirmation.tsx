@@ -1,14 +1,15 @@
-// frontend/src/pages/Confirmation.tsx
+// pages/Confirmation.tsx
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, Clock, Package, User } from 'lucide-react';
+import '../styles/Confirmation.css'; // Asegúrate de tener este archivo CSS
 
 const Confirmation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const orderData = location.state?.orderData;
   
-  // If no order data, redirect to home after 2 seconds
+  // Si no hay datos del pedido, redirigir después de 2 segundos
   useEffect(() => {
     if (!orderData) {
       const timer = setTimeout(() => {
@@ -19,53 +20,166 @@ const Confirmation: React.FC = () => {
     }
   }, [orderData, navigate]);
   
-  // Return to home
+  // Volver al inicio
   const handleReturn = () => {
     navigate('/', { replace: true });
   };
   
   if (!orderData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-green-100 to-green-200">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">No hay información de pedido disponible.</p>
-          <p className="text-gray-600">Redirigiendo a la página principal...</p>
+      <div className="confirmation-loading">
+        <div className="loading-content">
+          <p>No hay información de pedido disponible.</p>
+          <p>Redirigiendo a la página principal...</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-green-100 to-green-200">
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-md w-full text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="text-green-600" size={32} />
+    <div className="confirmation-container">
+      {/* Header elegante */}
+      <div className="confirmation-header">
+        <div className="header-content">
+          <img
+            src="/images/logo.png"
+            alt="Tía Coca"
+            className="header-logo"
+          />
         </div>
+      </div>
+
+      {/* Contenido principal */}
+      <div className="confirmation-main">
         
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">¡Pedido Confirmado!</h1>
-        
-        <div className="mb-6">
-          <p className="text-gray-600 mb-2">
-            Tu pedido ha sido registrado con éxito.
+        {/* Ícono de éxito y título */}
+        <div className="success-section">
+          <div className="success-icon">
+            <Check className="check-icon" strokeWidth={3} />
+          </div>
+          
+          <h1 className="main-title">¡Pedido confirmado!</h1>
+          
+          <p className="welcome-text">
+            Hola <span className="customer-name">{orderData.customerName}</span> 👋
           </p>
-          <p className="text-gray-600">
-            Número de pedido: <span className="font-semibold">{orderData.orderID}</span>
+          <p className="subtitle">
+            Tu pedido ha sido registrado exitosamente y está en preparación.
           </p>
         </div>
-        
-        <div className="bg-green-50 p-4 rounded-md mb-6">
-          <h2 className="font-semibold text-green-800 mb-2">Información importante</h2>
-          <p className="text-green-700 text-sm">
-            Tu pedido estará listo en aproximadamente 5 minutos. Puedes venir a recogerlo presentando tu nombre o número de pedido.
-          </p>
+
+        {/* Cards del contenido */}
+        <div className="cards-container">
+          
+          {/* Card del número de pedido */}
+          <div className="card order-number-card">
+            <div className="card-header green-header">
+              <Package className="header-icon" />
+              <h3>Número de pedido</h3>
+            </div>
+            <div className="card-content centered">
+              <p className="order-id">{orderData.orderID}</p>
+              <p className="order-note">Guarda este número para recoger tu pedido</p>
+            </div>
+          </div>
+
+          {/* Card del estado */}
+          <div className="card status-card">
+            <div className="card-header blue-header">
+              <Clock className="header-icon" />
+              <h3>Estado del pedido</h3>
+            </div>
+            <div className="card-content">
+              <div className="status-indicator">
+                <div className="status-dot"></div>
+                <span className="status-text">Preparando tu pedido</span>
+              </div>
+              <div className="time-estimate">
+                <p>Tiempo estimado: <span className="time-bold">{orderData.estimatedTime}</span></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Card del resumen */}
+          <div className="card summary-card">
+            <div className="card-header gray-header">
+              <h3>Resumen de tu pedido</h3>
+            </div>
+            <div className="card-content">
+              <div className="summary-grid">
+                
+                <div className="summary-column">
+                  <div className="summary-item">
+                    <span className="label">Producto:</span>
+                    <span className="value">{orderData.packageDetails.split(' - ')[0]}</span>
+                  </div>
+                  
+                  <div className="summary-item">
+                    <span className="label">Sabores:</span>
+                    <div className="flavors-container">
+                      {orderData.flavors.map((flavor: string, index: number) => (
+                        <span key={index} className="flavor-tag">
+                          {flavor}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="summary-column">
+                  <div className="summary-item">
+                    <span className="label">Dulzura:</span>
+                    <span className="value">{orderData.sweetness}</span>
+                  </div>
+                  
+                  <div className="summary-item">
+                    <span className="label">Machucado:</span>
+                    <span className="value">{orderData.crushedType}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <hr className="divider" />
+              
+              <div className="total-section">
+                <span className="total-label">Total pagado:</span>
+                <span className="total-amount">{orderData.totalPrice} Bs</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card de instrucciones */}
+          <div className="card instructions-card">
+            <div className="card-header yellow-header">
+              <User className="header-icon" />
+              <h3>¿Cómo recoger tu pedido?</h3>
+            </div>
+            <div className="card-content">
+              <div className="instructions-box">
+                <p className="instructions-title">🗣️ Presenta cualquiera de estos datos:</p>
+                <ul className="instructions-list">
+                  <li>• Tu nombre: <strong>"{orderData.customerName}"</strong></li>
+                  <li>• Número de pedido: <strong>{orderData.orderID}</strong></li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <button
-          onClick={handleReturn}
-          className="bg-green-600 text-white py-2 px-6 rounded-lg inline-block hover:bg-green-700 transition-colors"
-        >
-          Volver al inicio
-        </button>
+
+        {/* Botón principal */}
+        <div className="button-section">
+          <button
+            onClick={handleReturn}
+            className="main-button"
+          >
+            🛒 Hacer otro pedido
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="confirmation-footer">
+        <p>© 2025 Tía Coca. Gracias por tu preferencia 💚</p>
       </div>
     </div>
   );

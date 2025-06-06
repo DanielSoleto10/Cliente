@@ -19,6 +19,16 @@ export interface Flavor {
   category_id: string;
 }
 
+// ✅ QR Code types (AGREGAR ESTO)
+export interface QRCode {
+  id: string;
+  name: string;
+  image_url: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Order types
 export interface OrderInput {
   customerName: string;

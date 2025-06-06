@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base URL for the API - can be changed in .env file
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.5:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.3:5000/api';
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -101,6 +101,28 @@ export const orderService = {
       return response.data;
     } catch (error) {
       console.error('Error creating order:', error);
+      throw error;
+    }
+  },
+
+  // 📱 NUEVA FUNCIÓN: Get active QR codes
+  getActiveQRs: async () => {
+    try {
+      const response = await api.get('/qr/active');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active QRs:', error);
+      throw error;
+    }
+  },
+
+  // 📱 NUEVA FUNCIÓN: Get QR by ID
+  getQRById: async (id: string) => {
+    try {
+      const response = await api.get(`/qr/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching QR by ID:', error);
       throw error;
     }
   },

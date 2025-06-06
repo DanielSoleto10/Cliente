@@ -8,10 +8,6 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        <header className="app-header">
-          <img src="/assets/images/logo.png" alt="Coca Premium" className="app-logo" />
-        </header>
-        
         <main className="main-content">
           <Routes>
             <Route path="/" element={<OrderFlow />} />

@@ -1,14 +1,17 @@
-// frontend/src/components/OrderFlow/OrderSummary.tsx
+// components/OrderFlow/OrderSummary.tsx
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 interface OrderSummaryProps {
   packageDetails: string;
   flavorNames: string[];
   sweetness: string;
   crushedType: string;
+  totalPrice: number;
   onNext: () => void;
   onBack: () => void;
+  onModify: (step: number) => void;
+  currentStep: number;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -16,56 +19,101 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   flavorNames,
   sweetness,
   crushedType,
+  totalPrice,
   onNext,
-  onBack
+  onBack,
+  onModify,
+  currentStep
 }) => {
+  const stepTitles = ['', 'Selecciona tu paquete', 'Selecciona tus sabores', 'Grado de dulce', 'Tipo de machucado', 'Resumen del pedido', 'Finaliza tu pedido'];
+
   return (
-    <div className="order-summary-container">
-      <div className="step-header">
-        <button className="back-button" onClick={onBack}>
-          <ChevronLeft className="button-icon" />
+    <div className="card">
+      <div className="flex mb-4">
+        <button onClick={onBack} className="back-button-styled">
+          <ChevronLeft size={20} />
         </button>
-        <h2 className="step-title">Resumen del pedido</h2>
+        <h2 className="title" style={{ marginLeft: '8px' }}>{stepTitles[currentStep]}</h2>
       </div>
-      
+      <div className="progress-text mb-4">Paso {currentStep} de 6</div>
+
       <div className="order-summary">
         <div className="summary-section">
-          <span className="summary-label">Paquete</span>
-          <p className="summary-value">{packageDetails}</p>
+          <h3 className="summary-label">Paquete seleccionado</h3>
+          <div className="summary-highlight">
+            <p className="font-semibold text-lg">{packageDetails}</p>
+          </div>
+          <button 
+            className="modify-button"
+            onClick={() => onModify(1)}
+          >
+            Modificar paquete
+          </button>
         </div>
-        
+
         <div className="summary-section">
-          <span className="summary-label">Sabores</span>
+          <h3 className="summary-label">Sabores elegidos</h3>
           <div className="summary-tags">
             {flavorNames.map((flavor, index) => (
-              <span key={index} className="summary-tag">{flavor}</span>
+              <span key={index} className="summary-tag-highlight">
+                {flavor}
+              </span>
             ))}
           </div>
+          <button 
+            className="modify-button"
+            onClick={() => onModify(2)}
+          >
+            Modificar sabores
+          </button>
         </div>
-        
+
         <div className="summary-section">
-          <span className="summary-label">Grado de dulce</span>
-          <p className="summary-value">{sweetness}</p>
+          <h3 className="summary-label">Grado de dulce</h3>
+          <div className="summary-highlight">
+            <p className="font-medium">{sweetness}</p>
+          </div>
+          <button 
+            className="modify-button"
+            onClick={() => onModify(3)}
+          >
+            Modificar dulzura
+          </button>
         </div>
-        
+
         <div className="summary-section">
-          <span className="summary-label">Tipo de machucado</span>
-          <p className="summary-value">{crushedType}</p>
+          <h3 className="summary-label">Tipo de machucado</h3>
+          <div className="summary-highlight">
+            <p className="font-medium">{crushedType}</p>
+          </div>
+          <button 
+            className="modify-button"
+            onClick={() => onModify(4)}
+          >
+            Modificar machucado
+          </button>
+        </div>
+
+        <div className="summary-section-total">
+          <h3 className="summary-label">Total a pagar</h3>
+          <div className="total-highlight">
+            <p className="text-2xl font-bold text-primary">{totalPrice} Bs</p>
+          </div>
         </div>
       </div>
-      
-      <div className="summary-buttons">
+
+      <div className="flex gap-4 mt-6">
         <button
-          className="modify-button"
+          className="button button-outline"
           onClick={onBack}
         >
-          Modificar
+          Regresar
         </button>
         <button
-          className="continue-button"
+          className="button"
           onClick={onNext}
         >
-          Continuar
+          Continuar al pago
         </button>
       </div>
     </div>

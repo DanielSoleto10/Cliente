@@ -8,7 +8,7 @@ import {
   getCrushedTypes, 
   uploadPaymentProof, 
   getDailySales 
-} from '../controllers/orderController';
+} from '../controller/orderController';
 
 const router = express.Router();
 

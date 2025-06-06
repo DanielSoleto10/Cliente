@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import orderRoutes from './routes/orderRoutes';
+import qrRoutes from './routes/qrRoutes';  // ✅ AGREGAR ESTA LÍNEA
 import { errorHandler } from './middlewares/errorHandler';
 
 // Load environment variables
@@ -41,6 +42,7 @@ app.use(morgan('dev')); // HTTP request logger
 
 // Routes
 app.use('/api', orderRoutes);
+app.use('/api/qr', qrRoutes);  // ✅ AGREGAR ESTA LÍNEA
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -68,11 +70,14 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(50));
   console.log(`🚀 Servidor funcionando en puerto ${PORT}`);
   console.log(`📍 Local: http://localhost:${PORT}`);
-  console.log(`📱 Red: http://192.168.0.5:${PORT}`);
+  console.log(`📱 Red: http://192.168.0.3:${PORT}`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log('='.repeat(50));
   console.log('🔍 Debug logs activados');
   console.log('🌐 CORS configurado como permisivo (*)');
+  console.log('📱 Rutas QR disponibles:');  // ✅ AGREGAR ESTAS LÍNEAS
+  console.log('   GET /api/qr/active');
+  console.log('   GET /api/qr/:id');
   console.log('-'.repeat(50));
 });
 
