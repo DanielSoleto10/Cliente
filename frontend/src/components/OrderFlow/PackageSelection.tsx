@@ -20,6 +20,9 @@ const PackageSelection: React.FC<PackageSelectionProps> = ({
 }) => {
   const stepTitles = ['', 'Selecciona tu paquete', 'Selecciona tus sabores', 'Grado de dulce', 'Tipo de machucado', 'Resumen del pedido', 'Finaliza tu pedido'];
 
+  // Ordenar paquetes de menor a mayor precio
+  const sortedPackages = [...packages].sort((a, b) => a.price - b.price);
+
   return (
     <div className="card">
       <h2 className="title">{stepTitles[currentStep]}</h2>
@@ -50,7 +53,7 @@ const PackageSelection: React.FC<PackageSelectionProps> = ({
       </div>
 
       <div className="package-grid">
-        {packages.map((pkg) => (
+        {sortedPackages.map((pkg) => (
           <div
             key={pkg.id}
             className={`package-item ${selectedPackage === pkg.id ? 'selected' : ''}`}
