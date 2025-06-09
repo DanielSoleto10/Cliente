@@ -102,15 +102,32 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-4 mt-6">
+      {/* Botones verticales con separación consistente */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: '12px',
+        marginTop: '24px',
+        width: '100%'
+      } as React.CSSProperties}>
         <button
           className="button button-outline"
+          style={{ 
+            width: '100%',
+            marginBottom: '0',
+            marginRight: '0'
+          } as React.CSSProperties}
           onClick={onBack}
         >
           Regresar
         </button>
         <button
           className="button"
+          style={{ 
+            width: '100%',
+            marginBottom: '0',
+            marginRight: '0'
+          } as React.CSSProperties}
           onClick={onNext}
         >
           Continuar al pago

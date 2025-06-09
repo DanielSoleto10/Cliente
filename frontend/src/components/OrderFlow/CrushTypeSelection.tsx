@@ -32,14 +32,20 @@ const CrushTypeSelection: React.FC<CrushTypeSelectionProps> = ({
       </div>
       <div className="progress-text mb-4">Paso {currentStep} de 6</div>
 
-      <div className="flex flex-col gap-4 mb-6">
+      {/* Opciones con separación consistente */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '12px',
+        marginBottom: '24px'
+      } as React.CSSProperties}>
         {crushedTypes.map((type) => (
           <div
             key={type.id}
             className={`crushed-option ${selectedCrushType === type.id ? 'selected' : ''}`}
             onClick={() => onSelect(type.id)}
           >
-            <div className="flex items-start">
+            <div className="flex items-center justify-between">
               <div
                 className={`option-checkbox ${selectedCrushType === type.id ? 'checked' : ''}`}
               >
@@ -49,23 +55,32 @@ const CrushTypeSelection: React.FC<CrushTypeSelectionProps> = ({
                   </svg>
                 )}
               </div>
-              <div className="ml-3">
+              <div style={{ 
+                flex: 1, 
+                textAlign: 'center', 
+                paddingLeft: '16px', 
+                paddingRight: '16px' 
+              }}>
                 <h3 className="font-bold">{type.name}</h3>
                 <p className="text-sm text-gray-600">{type.description}</p>
               </div>
+              {/* Espacio invisible para balance */}
+              <div style={{ width: '20px' }}></div>
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        className="button"
-        disabled={!selectedCrushType}
-        onClick={onNext}
-      >
-        Siguiente
-        <ChevronRight size={20} className="ml-1" />
-      </button>
+      <div style={{ marginTop: '24px' }}>
+        <button
+          className="button"
+          disabled={!selectedCrushType}
+          onClick={onNext}
+        >
+          Siguiente
+          <ChevronRight size={20} className="ml-1" />
+        </button>
+      </div>
     </div>
   );
 };

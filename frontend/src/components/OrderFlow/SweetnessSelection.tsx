@@ -31,35 +31,66 @@ const SweetnessSelection: React.FC<SweetnessSelectionProps> = ({
       </div>
       <div className="progress-text mb-4">Paso {currentStep} de 6</div>
 
-      <div className="flex flex-col gap-4 mb-6">
+      {/* Opciones con separación consistente */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '12px',
+        marginBottom: '24px'
+      } as React.CSSProperties}>
         {sweetnessLevels.map((level) => (
           <div
             key={level}
             className={`sweetness-option ${selectedSweetness === level ? 'selected' : ''}`}
             onClick={() => onSelect(level)}
           >
-            <div className="flex items-center">
+            <div style={{ 
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              height: '100%'
+            }}>
+              {/* Checkbox en su posición original */}
               <div
-                className={`option-radio ${selectedSweetness === level ? 'checked' : ''}`}
+                className={`option-checkbox ${selectedSweetness === level ? 'checked' : ''}`}
               >
                 {selectedSweetness === level && (
-                  <div className="w-2 h-2 rounded-full bg-white"></div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3 h-3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 )}
               </div>
-              <span className="font-medium ml-3">{level}</span>
+              
+              {/* Texto centrado en toda la caja */}
+              <span 
+                className="font-medium"
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+              >
+                {level}
+              </span>
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        className="button"
-        disabled={!selectedSweetness}
-        onClick={onNext}
-      >
-        Siguiente
-        <ChevronRight size={20} className="ml-1" />
-      </button>
+      <div style={{ marginTop: '24px' }}>
+        <button
+          className="button"
+          disabled={!selectedSweetness}
+          onClick={onNext}
+        >
+          Siguiente
+          <ChevronRight size={20} className="ml-1" />
+        </button>
+      </div>
     </div>
   );
 };

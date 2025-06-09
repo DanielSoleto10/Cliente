@@ -18,7 +18,7 @@ if (supabaseUrl && supabaseKey) {
   console.error('❌ Variables de Supabase no configuradas');
 }
 
-// MÉTODO: createOrder CON PRECIO CORRECTO
+// MÉTODO: createOrder CON BACKEND API
 export const createOrder = async (req: Request, res: Response) => {
   try {
     console.log('📝 ==============================');
@@ -91,108 +91,108 @@ export const createOrder = async (req: Request, res: Response) => {
       console.log('⚠️ Usando valor por defecto:', extractedPrice, 'Bs');
     }
 
-    // Preparar datos para la base de datos
-    const orderData = {
-      flavors: flavorIds,
-      sweetness: sweetness,  // ← AGREGAR ESTA LÍNEA
-      crushed_type: crushedType,
-      package_type: packageInfo,
-      amount: extractedPrice,
-      notes: null,  // ← CAMBIAR: quitar la dulzura
-      status: 'pending',
-      full_name: customerName,
-      payment_proof_url: paymentProofUrl,
-      created_at: new Date().toISOString()
-    };
+    console.log('📝 Enviando pedido al BACKEND (no directo en Supabase)...');
 
-    console.log('💾 Datos preparados para guardar:');
-    console.log(JSON.stringify(orderData, null, 2));
-    console.log('💰 Amount final que se guardará:', extractedPrice, 'Bs');
-
-    // Verificar si Supabase está disponible
-    if (!supabase) {
-      console.warn('⚠️ Supabase no disponible, no se puede guardar el pedido');
-      return res.status(500).json({
-        success: false,
-        error: 'Configuración de base de datos incompleta',
-        message: 'Variables de entorno de Supabase no configuradas correctamente'
-      });
-    }
-
-    console.log('🔗 Conectando a Supabase...');
-
-    // Test de conexión y estructura de tabla
+    // 🚀 NUEVO: Llamar al backend API en lugar de insertar directo en Supabase
     try {
-      console.log('🔍 Verificando tabla "orders"...');
+      const backendResponse = await fetch('http://localhost:5001/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          full_name: customerName,
+          flavors: flavorIds,
+          sweetness: sweetness,
+          crushed_type: crushedType,
+          package_type: packageInfo,
+          amount: extractedPrice,
+          notes: null,
+          payment_proof_url: paymentProofUrl
+        })
+      });
 
-      // Primero hacer un SELECT simple para verificar la conexión
-      const { data: testData, error: testError } = await supabase
-        .from('orders')
-        .select('*')
-        .limit(1);
-
-      if (testError) {
-        console.error('❌ Error de conexión/tabla:', testError);
+      if (!backendResponse.ok) {
+        const errorData = await backendResponse.json();
+        console.error('❌ Error del backend:', errorData);
         return res.status(500).json({
           success: false,
-          error: 'Error de base de datos - tabla no accesible',
-          message: testError.message,
-          supabaseError: testError
+          error: 'Error al crear pedido en backend',
+          message: errorData.message || 'Error desconocido',
+          backendError: errorData
         });
       }
 
-      console.log('✅ Conexión a tabla "orders" exitosa');
+      const data = await backendResponse.json();
+      console.log('✅ Pedido creado exitosamente en backend:');
+      console.log(JSON.stringify(data, null, 2));
+      console.log('💰 Precio final guardado:', data.amount, 'Bs');
 
-    } catch (error) {
-      console.error('❌ Error de conexión general:', error);
+      console.log('✅ ==============================');
+      console.log('✅ PEDIDO CREADO Y ENVIADO VIA BACKEND');
+      console.log('✅ Socket.IO emitirá eventos automáticamente');
+      console.log('✅ ==============================');
+
+      res.json({
+        success: true,
+        data,
+        message: 'Pedido creado exitosamente via backend'
+      });
+
+    } catch (fetchError) {
+      console.error('❌ Error de conexión con backend:', fetchError);
       return res.status(500).json({
         success: false,
-        error: 'Error de conexión con base de datos',
-        message: error instanceof Error ? error.message : 'Error desconocido'
+        error: 'Error de conexión con backend',
+        message: fetchError instanceof Error ? fetchError.message : 'Error de conexión'
       });
     }
 
-    console.log('📝 Insertando pedido en Supabase...');
+    // 🔥 COMENTADO: Ya no insertamos directo en Supabase
+    // Preparar datos para la base de datos
+    // const orderData = {
+    //   flavors: flavorIds,
+    //   sweetness: sweetness,
+    //   crushed_type: crushedType,
+    //   package_type: packageInfo,
+    //   amount: extractedPrice,
+    //   notes: null,
+    //   status: 'pending',
+    //   full_name: customerName,
+    //   payment_proof_url: paymentProofUrl,
+    //   created_at: new Date().toISOString()
+    // };
+
+    // Verificar si Supabase está disponible
+    // if (!supabase) {
+    //   console.warn('⚠️ Supabase no disponible, no se puede guardar el pedido');
+    //   return res.status(500).json({
+    //     success: false,
+    //     error: 'Configuración de base de datos incompleta',
+    //     message: 'Variables de entorno de Supabase no configuradas correctamente'
+    //   });
+    // }
 
     // Insertar en la base de datos
-    const { data, error } = await supabase
-      .from('orders')
-      .insert(orderData)
-      .select()
-      .single();
+    // const { data, error } = await supabase
+    //   .from('orders')
+    //   .insert(orderData)
+    //   .select()
+    //   .single();
 
-    if (error) {
-      console.error('❌ Error de Supabase INSERT:', error);
-      console.error('❌ Código de error:', error.code);
-      console.error('❌ Detalles:', error.details);
-      console.error('❌ Hint:', error.hint);
-      console.error('❌ Message:', error.message);
-
-      return res.status(500).json({
-        success: false,
-        error: 'Error al insertar en base de datos',
-        message: error.message,
-        supabaseError: {
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        }
-      });
-    }
-
-    console.log('✅ Pedido insertado exitosamente:');
-    console.log(JSON.stringify(data, null, 2));
-    console.log('💰 Precio final guardado:', data.amount, 'Bs');
-
-    console.log('✅ ==============================');
-    console.log('✅ PEDIDO CREADO EXITOSAMENTE');
-    console.log('✅ ==============================');
-
-    res.json({
-      success: true,
-      data,
-      message: 'Pedido creado exitosamente'
-    });
+    // if (error) {
+    //   console.error('❌ Error de Supabase INSERT:', error);
+    //   return res.status(500).json({
+    //     success: false,
+    //     error: 'Error al insertar en base de datos',
+    //     message: error.message,
+    //     supabaseError: {
+    //       code: error.code,
+    //       details: error.details,
+    //       hint: error.hint
+    //     }
+    //   });
+    // }
 
   } catch (error) {
     console.error('❌ ERROR GENERAL EN CREATE ORDER:', error);
@@ -207,7 +207,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-// Otras funciones del controlador
+// Otras funciones del controlador (sin cambios)
 export const getOrders = async (req: Request, res: Response) => {
   try {
     if (!supabase) {
